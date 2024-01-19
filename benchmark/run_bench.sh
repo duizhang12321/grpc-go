@@ -65,11 +65,11 @@ run(){
     port=$((${base_port}+${delta}))
 
     # Launch the server in background
-    ${out_dir}/server --port=${port} --test_name="Server_"${test_name}&
+    numactl -C "0-7" -m 0 ${out_dir}/server --port=${port} --test_name="Server_"${test_name}&
     server_pid=$(echo $!)
 
     # Launch the client
-    ${out_dir}/client --port=${port} --d=${dur} --w=${warmup} --r=${nr} --c=${nc} --req=${req_sz} --resp=${resp_sz} --rpc_type=${r_type}  --test_name="client_"${test_name}
+    numactl -C "144-175" -m 1 ${out_dir}/client --port=${port} --d=${dur} --w=${warmup} --r=${nr} --c=${nc} --req=${req_sz} --resp=${resp_sz} --rpc_type=${r_type}  --test_name="client_"${test_name}
     client_status=$(echo $?)
 
     kill -INT ${server_pid}
@@ -175,7 +175,7 @@ done
 # Build server and client
 out_dir=$(mktemp -d oss_benchXXX)
 
-go build -o ${out_dir}/server $GOPATH/src/google.golang.org/grpc/benchmark/server/main.go && go build -o ${out_dir}/client $GOPATH/src/google.golang.org/grpc/benchmark/client/main.go
+go build -o ${out_dir}/server $PWD/server/main.go && go build -o ${out_dir}/client $PWD/client/main.go
 if [ $? != 0 ]; then
   clean_and_die 1
 fi
